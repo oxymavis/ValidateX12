@@ -1,0 +1,5 @@
+{
+  "required_ref_qualifiers": ["BM", "PO"],
+  "required_n1_entity_codes": ["ST"],
+  "warn_if_no_transport_segments": true
+}

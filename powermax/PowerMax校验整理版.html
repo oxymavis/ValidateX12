@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>PowerMax 856 校验说明整理版</title>
+  <style>
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.68;
+      margin: 36px;
+      color: #202428;
+      font-size: 12pt;
+    }
+    h1, h2, h3, h4 {
+      color: #16354b;
+      margin-top: 1.15em;
+      margin-bottom: 0.45em;
+    }
+    h1 {
+      font-size: 22pt;
+      border-bottom: 2px solid #16354b;
+      padding-bottom: 8px;
+    }
+    h2 {
+      font-size: 16pt;
+      border-left: 4px solid #547a92;
+      padding-left: 10px;
+    }
+    h3 {
+      font-size: 13pt;
+    }
+    h4 {
+      font-size: 12pt;
+      color: #3f6c84;
+    }
+    p {
+      margin: 0.35em 0;
+    }
+    ul, ol {
+      margin-top: 0.25em;
+      margin-bottom: 0.8em;
+    }
+    li {
+      margin: 0.2em 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0 1.2em;
+      font-size: 10.5pt;
+    }
+    th, td {
+      border: 1px solid #9eb2bf;
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+    th {
+      background: #eaf1f6;
+      text-align: left;
+    }
+    code {
+      font-family: Menlo, Consolas, monospace;
+      background: #f3f6f8;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 10pt;
+    }
+    .note {
+      background: #f7fafc;
+      border-left: 4px solid #8ba8bb;
+      padding: 10px 12px;
+      margin: 0.9em 0;
+    }
+    .divider {
+      border-top: 1px solid #d1d9df;
+      margin: 1.5em 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>PowerMax 856 校验说明整理版</h1>
+
+  <h2>1. 文档目的</h2>
+  <p>本文档基于 <code>PowerMax校验.docx</code> 整理，目的是将当前 PowerMax 856 项目的客户识别规则、报文归属结果以及样例 ASN 校验结论统一整理为一份清晰、可读、便于人工审阅和后续维护的说明文档。</p>
+  <p>本文档主要用于：</p>
+  <ul>
+    <li>根据 <code>ISA/GS</code> 信息识别 retailer</li>
+    <li>判断一份 ASN 应使用哪个 retailer 的校验 spec</li>
+    <li>快速查看当前生成 ASN 的主要错误与警告</li>
+    <li>为后续修正 mapping、HL 结构、字段拼装逻辑提供依据</li>
+  </ul>
+
+  <h2>2. Retailer 识别规则</h2>
+  <h3>2.1 统一判断格式</h3>
+  <p><code>Powermax [EDI标识符]:[ISA ID]/[GS ID] | 零售商 [EDI标识符]:[ISA ID]/[GS ID] | EDI版本</code></p>
+
+  <h3>2.2 Retailer 对照表</h3>
+  <table>
+    <tr>
+      <th>Retailer</th>
+      <th>PowerMax 标识</th>
+      <th>Retailer 标识</th>
+      <th>EDI 版本</th>
+      <th>辅助识别信息</th>
+    </tr>
+    <tr>
+      <td>Delhaize America</td>
+      <td><code>12:5036759180/5036759180</code></td>
+      <td><code>07:5400110000009/540011000</code></td>
+      <td><code>005010</code></td>
+      <td><code>DELHAIZE AMERICA</code> / <code>51007HO</code></td>
+    </tr>
+    <tr>
+      <td>DO IT BEST HARDWARE</td>
+      <td><code>12:8888323557/8888323557</code></td>
+      <td><code>ZZ:DOITBESTVP/DOITBESTVP</code></td>
+      <td><code>004010</code></td>
+      <td><code>Do It Best</code> / <code>0051064</code></td>
+    </tr>
+    <tr>
+      <td>Amazon Warehouse</td>
+      <td><code>12:5036759180/5036759180</code></td>
+      <td><code>ZZ:AMAZON/AMAZON</code></td>
+      <td><code>005010</code></td>
+      <td><code>AMAZON.COM.DEDC, INC</code> / <code>AMAZON.COM.CANADA</code> / <code>/0004588|4588B/</code></td>
+    </tr>
+    <tr>
+      <td>Walmart USA</td>
+      <td><code>ZZ:231472/231472</code></td>
+      <td><code>08:925485US00/925485US00</code></td>
+      <td><code>005010</code></td>
+      <td><code>WAL-MART STORES, INC</code> / <code>51010B</code></td>
+    </tr>
+    <tr>
+      <td>Burlington Coat Factory</td>
+      <td><code>12:9099452111/9099452111</code></td>
+      <td><code>08:6126750000/6126750000</code></td>
+      <td><code>004010</code></td>
+      <td><code>BURLINGTON MERCHANDISING CORP.</code> / <code>0051065</code></td>
+    </tr>
+    <tr>
+      <td>Fleet Farm</td>
+      <td><code>12:5036759180/5036759180</code></td>
+      <td><code>12:4147318121/4147318121</code></td>
+      <td><code>004010</code></td>
+      <td><code>MILLS FLEET FARM</code> / <code>0004627</code></td>
+    </tr>
+    <tr>
+      <td>Topco</td>
+      <td><code>12:SPS6759180/SPS6759180</code></td>
+      <td><code>08:9256490000/8473293489</code></td>
+      <td><code>004010UCS</code></td>
+      <td><code>51012SP</code> / <code>51012SI</code> / <code>51012NF</code></td>
+    </tr>
+  </table>
+
+  <h3>2.3 判断原则</h3>
+  <ol>
+    <li>主判断依据是 <code>ISA</code> 和 <code>GS</code> 中的 qualifier、sender/receiver ID 与版本号。</li>
+    <li><code>N1</code> 名称、客户显示名只作为辅助信息，不作为第一优先级。</li>
+    <li>即使报文存在 <code>GS01</code>、<code>GS08</code> 等字段错误，只要 <code>ISA/GS</code> 标识匹配，仍可先归属 retailer，再按对应 spec 校验。</li>
+  </ol>
+
+  <h2>3. 已识别文件归属</h2>
+  <table>
+    <tr>
+      <th>文件名</th>
+      <th>Retailer</th>
+      <th>建议使用的校验脚本</th>
+    </tr>
+    <tr>
+      <td><code>0074072_79HFKDZP_20260311181704.edi</code></td>
+      <td>Amazon Warehouse</td>
+      <td><code>validate_amazon_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0074099_13532765_20260311181954.edi</code></td>
+      <td>Delhaize America</td>
+      <td><code>validate_delhaize_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0073721_4864877_20260311181809.edi</code></td>
+      <td>Fleet Farm</td>
+      <td><code>validate_fleet_farm_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0073894_384562802_20260311181739.edi</code></td>
+      <td>Burlington Coat Factory</td>
+      <td><code>validate_burlington_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0073464_821384_20260311181929.edi</code></td>
+      <td>Topco</td>
+      <td><code>validate_sps_commerce_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0073801_830962_20260311181839.edi</code></td>
+      <td>Topco</td>
+      <td><code>validate_sps_commerce_856_spec.py</code></td>
+    </tr>
+    <tr>
+      <td><code>0073927_082335_20260311181904.edi</code></td>
+      <td>Topco</td>
+      <td><code>validate_sps_commerce_856_spec.py</code></td>
+    </tr>
+  </table>
+
+  <div class="note">
+    <strong>当前目录中未匹配到的 Retailer：</strong><br>
+    DO IT BEST HARDWARE、Walmart USA
+  </div>
+
+  <h2>4. 各 Retailer ASN 校验结果汇总</h2>
+
+  <h2>5. Amazon Warehouse</h2>
+  <h3>5.1 文件</h3>
+  <p><code>AMAZON-0074072_79HFKDZP_20260311181704.edi</code></p>
+
+  <h3>5.2 去重后的主要报错</h3>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 必须是 <code>SH</code></li>
+    <li><code>BSN04</code> 必须是 <code>HHMMSS</code></li>
+    <li>缺少 shipment 级 <code>DTM*011</code></li>
+    <li>缺少 shipment 级 <code>DTM*017</code></li>
+    <li><code>Ship To N103</code> 不符合要求，必须是 <code>15/92/UL</code></li>
+    <li>缺少 <code>Ship To N104</code></li>
+    <li><code>Ship From N103</code> 不符合要求，必须是 <code>1/15/92/UL/ZZ</code></li>
+    <li>缺少 <code>Ship From N104</code></li>
+    <li>Package 层缺少 <code>REF*CN</code></li>
+    <li>item 层缺少 <code>LIN03</code></li>
+    <li>item 层 <code>SN103</code> 不是 <code>CA</code> 或 <code>EA</code>，实际更像是缺失</li>
+  </ul>
+
+  <h4>Warning</h4>
+  <ul>
+    <li>出现了 import-only 的 <code>TD3</code></li>
+    <li><code>REF*BM</code> 是 TL/LTL 条件字段提醒</li>
+    <li><code>Ship To N102</code> 被使用，但 PDF 标为 not used</li>
+    <li><code>Ship From N102</code> 被使用，但 PDF 标为 not used</li>
+    <li><code>LIN</code> 中出现额外 qualifier：<code>BP/UP/UK/UA/SKU</code>。按当前 Amazon PDF 严格校验会提示，但不一定代表业务上绝对错误。</li>
+  </ul>
+
+  <h3>5.3 结论</h3>
+  <ol>
+    <li>头部和 shipment 基础段不符合 Amazon 856：<code>GS01/BSN04/DTM/N1</code></li>
+    <li>package 层缺少关键 tracking 字段：<code>REF*CN</code></li>
+    <li>item 层 <code>LIN/SN1</code> 关键字段不完整</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>6. Burlington Coat Factory</h2>
+  <h3>6.1 文件</h3>
+  <p><code>Burlington-0073894_384562802_20260311181739.edi</code></p>
+
+  <h3>6.2 去重后的主要报错</h3>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 不是 <code>SH</code>，当前是 <code>SW</code></li>
+    <li><code>TD3</code> 缺少 <code>TD303 equipment number</code></li>
+    <li><code>LIN02</code> 不是 Burlington 允许的 <code>EN/IN/UK/UP</code></li>
+    <li>缺少 <code>LIN03 item ID</code></li>
+    <li><code>LIN04</code> 不符合该位置允许值 <code>IT</code></li>
+    <li><code>LIN06</code> 不符合该位置允许值 <code>BO</code></li>
+    <li>使用了 <code>LIN06</code> 时缺少 <code>LIN07</code></li>
+    <li><code>LIN08</code> 不符合该位置允许值 <code>IZ</code></li>
+    <li>使用了 <code>LIN08</code> 时缺少 <code>LIN09</code></li>
+    <li><code>LIN10</code> 不符合该位置允许值 <code>PU</code></li>
+    <li>使用了 <code>LIN10</code> 时缺少 <code>LIN11</code></li>
+    <li><code>LIN12</code> 不符合该位置允许值 <code>BL</code></li>
+    <li><code>SN103</code> 必须是 <code>AS</code> 或 <code>EA</code></li>
+  </ul>
+
+  <h4>Warning</h4>
+  <ul>
+    <li>shipment 级 <code>TD101</code> 不在允许值 <code>BAG/CTN/SLP/SRW</code> 中</li>
+    <li>出现 Burlington 规范外的 <code>REF01='23'</code></li>
+    <li>国家代码用了 <code>USA</code>，建议使用 <code>US</code></li>
+  </ul>
+
+  <h3>6.3 结论</h3>
+  <ol>
+    <li>头部功能组错误：<code>GS01=SW</code></li>
+    <li>shipment 级运输信息不完整：<code>TD3/N4/REF</code></li>
+    <li>item 级 <code>LIN/SN1</code> 结构明显不符合 Burlington 856 规范</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>7. Delhaize America</h2>
+  <h3>7.1 文件</h3>
+  <p><code>Delhaize-0074099_13532765_20260311181954.edi</code></p>
+
+  <h3>7.2 主要报错</h3>
+  <h4>Error</h4>
+  <ul>
+    <li><code>Functional group for 856 must be SH (got 'SW')</code></li>
+    <li>缺少 shipment 级 <code>DTM</code></li>
+    <li>出现不支持的 <code>HL03='T'</code></li>
+    <li><code>Pack HL</code> 的父级不是 <code>Order HL</code></li>
+    <li>缺少 pack 级 <code>LIN</code></li>
+    <li>缺少 pack 级 <code>SN1</code></li>
+    <li>缺少 item 级 <code>LIN03</code></li>
+    <li><code>Item SN103</code> 必须是 <code>EA</code></li>
+  </ul>
+
+  <h4>Warning</h4>
+  <ul>
+    <li>Delhaize DSD sample/profile 不使用 <code>Tare HL</code></li>
+    <li>sample/profile 中通常要求 shipment <code>PO4</code></li>
+    <li>shipment <code>TD502</code> 在样例中通常为 <code>9</code></li>
+    <li>国家代码建议使用 <code>US</code> 而不是 <code>USA</code></li>
+  </ul>
+
+  <h3>7.3 结论</h3>
+  <ol>
+    <li>头部 <code>GS01</code> 不符合规范</li>
+    <li>HL 层级结构不符合 DSD profile</li>
+    <li>shipment 级缺关键日期段</li>
+    <li>pack/item 级字段生成方式与 Delhaize sample/profile 不一致</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>8. Fleet Farm</h2>
+  <h3>8.1 文件</h3>
+  <p><code>Fleet Farm-0073721_4864877_20260311181809.edi</code></p>
+
+  <h3>8.2 去重后的主要报错</h3>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 必须是 <code>SH</code>，当前是 <code>SW</code></li>
+    <li>缺少 <code>PER*CE</code> 供应商联系人</li>
+    <li>缺少 <code>DTM*011</code> 发运日期</li>
+    <li>shipment 级 <code>N1*ST</code> 必须 <code>N103=92</code></li>
+    <li>shipment 级 <code>N1*ST</code> 缺少 3-5 位门店/DC 编号 <code>N104</code></li>
+    <li>order 级缺少 <code>REF*IA</code></li>
+    <li>item 级 <code>LIN02</code> 后缺少 <code>LIN03</code></li>
+    <li>使用 <code>LIN08</code> 时缺少 <code>LIN09</code></li>
+    <li>使用 <code>LIN10</code> 时缺少 <code>LIN11</code></li>
+    <li>item 级 <code>SN103</code> 必须是 <code>EA</code></li>
+  </ul>
+
+  <h4>Warning</h4>
+  <ul>
+    <li><code>PRF04</code> 的 PO 日期按 mapping 期望存在</li>
+    <li>出现了未预期的 <code>LIN qualifier 'BP'</code></li>
+    <li>出现了未预期的 <code>LIN qualifier 'UK'</code></li>
+    <li>出现了未预期的 <code>LIN qualifier 'UA'</code></li>
+    <li>出现了未预期的 <code>LIN qualifier 'SKU'</code></li>
+  </ul>
+
+  <h3>8.3 结论</h3>
+  <ol>
+    <li>头部和 shipment 级基础段不合规：<code>GS01/PER/DTM/N1</code></li>
+    <li>order 级缺少 <code>REF*IA</code></li>
+    <li>item 层 <code>LIN/SN1</code> 结构不符合 Fleet Farm sample/profile</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>9. Topco / SPS Commerce</h2>
+  <p>Topco 相关文件当前使用 SPS Commerce 856 通用规则进行校验。</p>
+
+  <h3>9.1 文件一</h3>
+  <p><code>NASH FINCH BELLEFONTAINE-0073464_821384_20260311181929.edi</code></p>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 必须是 <code>SH</code>，实际为 <code>SW</code></li>
+    <li><code>GS08</code> 必须是 <code>004010</code>、<code>004030</code> 或 <code>005010</code></li>
+    <li><code>REF02</code> 或 <code>REF03</code> 至少需要一个</li>
+    <li><code>TD108</code> 必须是数值</li>
+    <li><code>TD110</code> 必须是数值</li>
+    <li><code>LIN03</code> 缺失</li>
+    <li><code>LIN</code> 成对规则不满足：<code>LIN02/LIN03</code>、<code>LIN04/LIN05</code>、<code>LIN10/LIN11</code></li>
+    <li><code>PO402</code> 和 <code>PO403</code> 必须成对出现</li>
+  </ul>
+  <h4>Warning</h4>
+  <ul>
+    <li><code>TD107 '1794.4'</code> 不在 SPS 常见重量单位列表中</li>
+    <li><code>TD109 '59.6414'</code> 或 <code>59.64</code> 不在 SPS 常见体积单位列表中</li>
+    <li><code>TD504='L'</code> 不在 SPS 常见承运代码限定值中</li>
+    <li><code>N101='SO'</code> 不在 SPS 常见实体代码中</li>
+    <li><code>LIN10 qualifier 'UA'</code> 不在 SPS 常见 qualifier 中</li>
+    <li><code>LIN12 qualifier 'SKU'</code> 不在 SPS 常见 qualifier 中</li>
+  </ul>
+
+  <h3>9.2 文件二</h3>
+  <p><code>NASH FINCH HBC GM-0073801_830962_20260311181839.edi</code></p>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 必须是 <code>SH</code>，实际为 <code>SW</code></li>
+    <li><code>GS08</code> 必须是 <code>004010</code>、<code>004030</code> 或 <code>005010</code></li>
+    <li><code>TD108</code> 必须是数值</li>
+    <li><code>TD110</code> 必须是数值</li>
+    <li><code>LIN03</code> 缺失</li>
+    <li><code>LIN</code> 成对规则不满足：<code>LIN02/LIN03</code>、<code>LIN04/LIN05</code>、<code>LIN10/LIN11</code></li>
+    <li><code>PO402</code> 和 <code>PO403</code> 必须成对出现</li>
+  </ul>
+  <h4>Warning</h4>
+  <ul>
+    <li><code>TD107 '975.3'</code> 不在 SPS 常见重量单位列表中</li>
+    <li><code>TD109 '27.5409'</code> 或 <code>27.54</code> 不在 SPS 常见体积单位列表中</li>
+    <li><code>TD504='L'</code> 不在 SPS 常见承运代码限定值中</li>
+    <li><code>N101='SO'</code> 不在 SPS 常见实体代码中</li>
+    <li><code>LIN10 qualifier 'UA'</code> 不在 SPS 常见 qualifier 中</li>
+    <li><code>LIN12 qualifier 'SKU'</code> 不在 SPS 常见 qualifier 中</li>
+  </ul>
+
+  <h3>9.3 文件三</h3>
+  <p><code>SPARTAN STORES INC-0073927_082335_20260311181904.edi</code></p>
+  <h4>Error</h4>
+  <ul>
+    <li><code>GS01</code> 必须是 <code>SH</code>，实际为 <code>SW</code></li>
+    <li><code>GS08</code> 必须是 <code>004010</code>、<code>004030</code> 或 <code>005010</code></li>
+    <li><code>TD108</code> 必须是数值</li>
+    <li><code>TD110</code> 必须是数值</li>
+    <li><code>LIN03</code> 缺失</li>
+    <li><code>LIN</code> 成对规则不满足：<code>LIN02/LIN03</code>、<code>LIN04/LIN05</code>、<code>LIN10/LIN11</code></li>
+    <li><code>PO402</code> 和 <code>PO403</code> 必须成对出现</li>
+  </ul>
+  <h4>Warning</h4>
+  <ul>
+    <li><code>TD107 '1347.5'</code>、<code>855.5</code>、<code>492</code> 不在 SPS 常见重量单位列表中</li>
+    <li><code>TD109 '43.9706'</code>、<code>31.75</code>、<code>12.22</code> 不在 SPS 常见体积单位列表中</li>
+    <li><code>TD504='L'</code> 不在 SPS 常见承运代码限定值中</li>
+    <li><code>LIN10 qualifier 'UA'</code> 不在 SPS 常见 qualifier 中</li>
+    <li><code>LIN12 qualifier 'SKU'</code> 不在 SPS 常见 qualifier 中</li>
+  </ul>
+
+  <h3>9.4 总结</h3>
+  <ol>
+    <li>头部 <code>GS01/GS08</code> 不符合 SPS 856</li>
+    <li><code>TD1</code> 的重量、体积字段位置疑似错位</li>
+    <li>item 层 <code>LIN</code> 成对字段缺失</li>
+    <li><code>PO4</code> 也缺少成对字段</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>10. 共性问题汇总</h2>
+  <h3>10.1 头部问题</h3>
+  <ul>
+    <li>多个文件将 <code>GS01</code> 生成成了 <code>SW</code>，但 856 应为 <code>SH</code></li>
+    <li>部分文件 <code>GS08</code> 与目标 spec 版本不匹配</li>
+  </ul>
+
+  <h3>10.2 HL 结构问题</h3>
+  <ul>
+    <li>不同 retailer 对 <code>S/O/P/I</code> 或 <code>S/O/T/P/I</code> 的要求不同</li>
+    <li>当前生成逻辑在 Delhaize、Topco/SPS 等场景下，仍存在层级结构不匹配</li>
+  </ul>
+
+  <h3>10.3 Shipment 级段问题</h3>
+  <ul>
+    <li><code>DTM</code>、<code>PER</code>、<code>REF</code>、<code>TD3</code> 等段缺失或元素不完整</li>
+    <li><code>N1/N4</code> 的 qualifier、国家代码、标识符字段不符合客户规范</li>
+  </ul>
+
+  <h3>10.4 Item 级段问题</h3>
+  <ul>
+    <li><code>LIN</code> 的 qualifier/value 成对规则经常不满足</li>
+    <li><code>SN103</code> 单位代码与 retailer spec 不一致</li>
+    <li><code>PO4</code> 的成对字段缺失较常见</li>
+  </ul>
+
+  <h2>11. 建议修正顺序</h2>
+  <ol>
+    <li>先修正 envelope 和头部字段：<code>GS01</code>、<code>GS08</code>、<code>ISA/GS</code> 与 retailer mapping 的对应关系</li>
+    <li>再修正 HL 结构模板：不同 retailer 使用不同 HL 模板，避免一个通用模板硬套全部客户</li>
+    <li>再修正 shipment/order 级必填段：<code>DTM</code>、<code>PER</code>、<code>PRF</code>、<code>REF</code>、<code>N1/N4</code>、<code>TD3</code></li>
+    <li>最后修正 item 级字段拼装：<code>LIN</code> 成对输出、<code>SN103</code> 单位按客户规范输出、<code>PO4</code> 成对字段完整输出</li>
+  </ol>
+
+  <h2>12. 当前文档用途说明</h2>
+  <p>本整理版文档适合作为项目内部对照说明、ASN 生成逻辑修正清单、retailer 规则识别手册，以及后续补充更多 retailer 校验结论的基础模板。</p>
+</body>
+</html>
