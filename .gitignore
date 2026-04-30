@@ -6,3 +6,6 @@ __pycache__/
 edi_validate_web_app/data/reports/
 data/
 *.log
+
+# Standalone skill kit repo (ValidateX12-skill); has its own .git
+skillkit-edi-validate-studio/
