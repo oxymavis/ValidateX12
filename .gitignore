@@ -1,5 +1,8 @@
 .DS_Store
 __pycache__/
 *.pyc
+*.py[cod]
 
 edi_validate_web_app/data/reports/
+data/
+*.log

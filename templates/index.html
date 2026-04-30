@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDI Validate Studio</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Generic EDI Validation Platform</div>
+        <h1>EDI Validate Studio</h1>
+        <p>Upload customer specs, extract readable validation points, validate EDI messages, and export bilingual Markdown findings.</p>
+      </div>
+      <div class="hero-badges">
+        <span class="badge">Spec Extraction</span>
+        <span class="badge">Built-in Profiles</span>
+        <span class="badge">Bilingual Findings</span>
+        <span class="badge">Markdown Export</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="pane">
+        <div class="pane-head">
+          <h2>Spec Upload</h2>
+          <p>上传 PDF、Word、Excel、TXT 或 Markdown spec 文档。</p>
+        </div>
+
+        <form id="spec-form" class="card upload-card">
+          <label class="dropzone" for="spec-files">
+            <input id="spec-files" type="file" name="specFiles" accept=".pdf,.docx,.xlsx,.xls,.txt,.md" multiple>
+            <span class="drop-title">Drag files here or click to upload</span>
+            <span class="drop-subtitle">The app will extract rule candidates and show which ones are executable.</span>
+          </label>
+          <button class="primary-btn" type="submit">Extract Validation Points</button>
+        </form>
+
+        <div id="spec-status" class="status muted">No spec uploaded yet.</div>
+
+        <section id="mode-card" class="card mode-card hidden">
+          <h3>Validation Mode</h3>
+          <div class="mode-grid">
+            <div>
+              <span class="label">Current Mode</span>
+              <strong id="mode-label">Generic</strong>
+            </div>
+            <div>
+              <span class="label">Detected Profile</span>
+              <strong id="profile-label">None</strong>
+            </div>
+          </div>
+          <p id="profile-reason" class="helper"></p>
+          <div class="mode-grid validator-grid">
+            <div>
+              <span class="label">Spec ID</span>
+              <strong id="spec-id-label">-</strong>
+            </div>
+            <div>
+              <span class="label">Validator Build</span>
+              <strong id="validator-build-label">-</strong>
+            </div>
+            <div>
+              <span class="label">Rules File</span>
+              <strong id="rules-path-label">-</strong>
+            </div>
+            <div>
+              <span class="label">Rules Hash</span>
+              <strong id="rules-hash-label">-</strong>
+            </div>
+          </div>
+        </section>
+
+        <section id="spec-summary" class="summary-grid hidden">
+          <article class="metric-card">
+            <span>Total Points</span>
+            <strong id="metric-total">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Executable Rules</span>
+            <strong id="metric-compiled">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Informational Rules</span>
+            <strong id="metric-info">0</strong>
+          </article>
+        </section>
+
+        <section id="documents-box" class="stack"></section>
+        <section id="unsupported-box" class="stack"></section>
+        <section id="point-groups" class="stack"></section>
+      </section>
+
+      <section class="pane">
+        <div class="pane-head">
+          <h2>EDI Message Validation</h2>
+          <p>在这里粘贴 EDI 报文，系统会输出中英文校验结果。</p>
+        </div>
+
+        <section class="card editor-card">
+          <label for="edi-message" class="editor-label">EDI Message</label>
+          <textarea id="edi-message" placeholder="Paste EDI message here..."></textarea>
+          <div class="action-row">
+            <button id="validate-btn" class="primary-btn" type="button" disabled>Validate EDI</button>
+            <a id="download-link" class="secondary-btn disabled" href="#" download>Download Markdown</a>
+          </div>
+        </section>
+
+        <div id="validation-status" class="status muted">Upload a spec to enable validation.</div>
+        <div id="fallback-status" class="status warning hidden"></div>
+
+        <section id="finding-summary" class="summary-grid hidden">
+          <article class="metric-card">
+            <span>Total Findings</span>
+            <strong id="finding-total">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Errors</span>
+            <strong id="finding-errors">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Warnings</span>
+            <strong id="finding-warnings">0</strong>
+          </article>
+        </section>
+
+        <section id="findings-list" class="stack"></section>
+      </section>
+    </main>
+  </div>
+
+  <template id="document-template">
+    <article class="card document-card">
+      <div class="document-top">
+        <strong class="doc-name"></strong>
+        <span class="doc-type"></span>
+      </div>
+      <div class="document-meta"></div>
+    </article>
+  </template>
+
+  <template id="point-group-template">
+    <article class="card point-group-card">
+      <div class="point-group-head">
+        <h3></h3>
+        <span class="count-pill"></span>
+      </div>
+      <div class="point-items"></div>
+    </article>
+  </template>
+
+  <template id="point-item-template">
+    <div class="point-item">
+      <div class="point-item-top">
+        <strong class="point-title"></strong>
+        <span class="point-pill"></span>
+      </div>
+      <div class="point-meta"></div>
+      <p class="point-line"></p>
+    </div>
+  </template>
+
+  <template id="finding-template">
+    <article class="card finding-card">
+      <div class="finding-top">
+        <span class="severity-pill"></span>
+        <span class="finding-code"></span>
+      </div>
+      <div class="finding-meta"></div>
+      <p class="finding-zh"></p>
+      <p class="finding-en"></p>
+      <div class="raw-block">
+        <div class="raw-label">Original Segment</div>
+        <pre class="finding-raw"></pre>
+      </div>
+    </article>
+  </template>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
