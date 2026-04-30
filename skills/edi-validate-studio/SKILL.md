@@ -1,13 +1,11 @@
 ---
 name: edi-validate-studio
 description: >-
-  Describes EDI Validate Studio — spec upload, heuristic rule extraction from
-  PDF/DOCX/Excel/text, per-upload generated validator artifacts, generic X12
-  validation runtime, optional built-in retail 856 / BluJay 210 plugins,
-  bilingual findings, Markdown reports, Flask API and deployment constraints.
-  Use when the user works with this repo, edi_validate_web_app, X12 856/210
-  validation against customer specs, spec-bound validation, or importing this
-  product’s behavior into another agent.
+  EDI Validate Studio — runnable headless CLI (scripts/validate_cli.py) plus
+  Flask app, spec extraction, generic X12 validation, built-in 856/210 plugins,
+  bilingual findings. Use when the user wants real validation output without
+  starting HTTP, or asks about edi_validate_web_app, spec upload API, X12
+  validation, or agent-driven validate_cli runs from the Validation EDI repo.
 ---
 
 # EDI Validate Studio — Agent Skill
@@ -25,6 +23,27 @@ Your agent expects:
 In **this repository**, set `{skills_dir}` to the folder **`skills/`** at the repo root (the directory that contains `edi-validate-studio/`). Do not point `{skills_dir}` only at `.cursor/skills/` unless your tool explicitly reads Cursor’s layout.
 
 A **Cursor-compatible** copy of this same skill body is linked from `.cursor/skills/edi-validate-studio/SKILL.md` (symlink to here).
+
+## Runnable validation (no Flask, no public URL)
+
+This skill ships a **CLI** that calls the **same Python engine** as the web app (`core.generic_validator`, plugins, `merge_findings`). The agent should **run it in the user’s clone of the Validation EDI monorepo** (where `edi_validate_web_app/` and parent-level `validate_*` modules exist).
+
+```bash
+# From repository root (Validation EDI)
+python3 skills/edi-validate-studio/scripts/validate_cli.py \
+  --spec path/to/spec.pdf \
+  --spec path/to/second.xlsx \
+  --edi path/to/message.edi
+
+# EDI on stdin
+python3 skills/edi-validate-studio/scripts/validate_cli.py --spec ./spec.pdf --edi - < message.edi
+```
+
+- **`--repo`**: optional override if auto-detect fails (auto = parent of `skills/`).
+- **`VALIDATION_EDI_ROOT`**: optional env var, same as `--repo`.
+- **Stdout**: JSON with `validationMode`, `summary`, `findings`, `specSummary`, `pointGroups`, `unsupported`, and optional `fallback`.
+
+**Requirements**: same dependencies as `edi_validate_web_app` (e.g. `flask`, `pandas`, `pdfplumber`, `openpyxl` — Flask is not started by the CLI but may be importable in the environment).
 
 ## What this product does
 
@@ -93,6 +112,15 @@ Plugins may pull additional imports from sibling repo files; satisfy those when 
 - Planning deployment (paths, ports, co-hosting with Nginx).
 
 ## Quick run (for humans or agent-driven shells)
+
+**Headless JSON (no server):**
+
+```bash
+cd /path/to/Validation\ EDI
+python3 skills/edi-validate-studio/scripts/validate_cli.py --spec ./customer.pdf --edi ./856.edi
+```
+
+**Web UI:**
 
 ```bash
 cd /path/to/Validation\ EDI/edi_validate_web_app
