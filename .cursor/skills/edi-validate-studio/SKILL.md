@@ -12,6 +12,14 @@ description: >-
 
 # EDI Validate Studio — Agent Skill
 
+## Where to install this skill
+
+Agents that load skills from a default **`skills/`** directory should receive this file as:
+
+`skills/edi-validate-studio/SKILL.md`
+
+That is: create a folder `skills/edi-validate-studio/`, place this `SKILL.md` inside it (and keep any sibling files your packaging adds, e.g. `reference.md`). For **Cursor**, the usual global location is `~/.cursor/skills/edi-validate-studio/SKILL.md` (same folder layout).
+
 ## What this product does
 
 1. **Spec ingestion**: User uploads one or more customer spec files (allow-list: `.pdf`, `.docx`, `.xlsx`, `.xls`, `.txt`, `.md`). Max upload size is configured on the Flask app (typically ~25MB).
